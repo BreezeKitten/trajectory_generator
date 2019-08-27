@@ -2,12 +2,22 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import math as m
+
+PI = m.pi
+deltaT = 0.1
+V_set = [-1.5,1.5]
+W_set = [0,PI/2,-PI/2,PI,-PI]
+resX = 0.1
+resY = 0.1
+resTH = PI/15
+
 
 class node():
     def __init__(self, C, P):
         self.C = C
-        self.N = [np.floor(C[0]), np.floor(C[1])]
         self.P = P
+        self.Id = '[' + str(np.floor(self.C[0]/resX)) + ',' +  str(np.floor(self.C[1]/resY)) + ',' + str(np.floor(self.C[2]/resTH)) + ']'
         
     def Set_cost(self, G, H):
         self.G = G
@@ -15,9 +25,81 @@ class node():
         self.COST = self.G + self.H
 
 
+def motionMode(C, V, W):
+    Xp = C[0]
+    Yp = C[1]
+    THp = C[2]
+    X = Xp + V * deltaT * m.cos(THp)
+    Y = Yp + V * deltaT * m.sin(THp)
+    TH = THp + W * deltaT
+
+    return [X,Y,TH]
+
+
+
+def Cost_cal(Nn, Ng, Vn, Wn, V, W):
+    G = abs(V) + abs(W)
+    H = abs(Nn.C[0] - Ng.C[0]) + abs(Nn.C[1] - Ng.C[1]) + abs(Nn.C[2] - Ng.C[2])
+
+    return G, H
+
+    
+def ExpandNode(N, Ng, So, Sc):
+    for V in V_set:
+        for W in W_set:
+            C_temp = motionMode(N.C, V, W)
+            temp = node(C_temp, N.Id)
+            G, H = Cost_cal(temp, Ng, 0, 0, V, W)
+            temp.Set_cost(G + N.G,20*H)
+            if temp.Id in Sc:
+                pass
+            elif temp.Id in So:
+                if temp.G <= So[temp.Id].G:
+                    So[temp.Id] = temp
+            else:
+                So[temp.Id] = temp
+                
+    return So
+
+
+def find_min_cost(S):
+    min_node = node([999,999,999],0)
+    min_node.Set_cost(9999999,99999999999)
+    for i in S:
+        if S[i].COST < min_node.COST:
+            min_node = S[i]
+
+    return min_node
+        
+
+def hybrid_A_star_process(Ns, Ng, So, Sc):
+    So[Ns.Id] = Ns
+    i = 0
+    while Ng.Id not in Sc:
+        Nn = find_min_cost(So)
+        So = ExpandNode(Nn, Ng, So, Sc)
+        Sc[Nn.Id] = Nn
+        del So[Nn.Id]
+        i = i + 1
+    return So, Sc, i
+
+
+def Show_path(S, Ns, Ng):
+    Path = []
+    Nn = Ng
+    while Nn.Id != Ns.Id:
+        Path.append(Nn.C)
+        Nn = S[S[Nn.Id].P]
+
+    return Path
+
+
 if __name__ == '__main__':
-    a = node([0.1,1.5,2],[0,0])
-    print(a.C[0])
-    print(a.N)
-    a.Set_cost(44,22)
-    print(a.COST)
+    a = node([5,5,PI/2],1)
+    a.Set_cost(0,0)
+    b = node([8,5,PI/2],1)
+    Sop = {}
+    Scl = {}
+    Sop, Scl, i = hybrid_A_star_process(a,b,Sop,Scl)
+    Path = Show_path(Scl,a,b)
+    print(Path,i)
