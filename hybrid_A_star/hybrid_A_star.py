@@ -3,7 +3,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import math as m
-
+from map_load.map_load import load_img, rgb2gray
 
 # Parameter
 PI = m.pi
@@ -127,11 +127,14 @@ def Show_path(S, Ns, Ng):
     while Nn.Id != Ns.Id:
         Path.append(Nn.C)
         Nn = S[S[Nn.Id].P]
-
+        plt.plot(Path[-1][0],Path[-1][1],'ro')
+        plt.arrow(Path[-1][0],Path[-1][1],0.1*m.cos(Path[-1][2]),0.1*m.sin(Path[-1][2]))
+    plt.show()
     return Path
 
 
 if __name__ == '__main__':
+    image = rgb2gray(load_img('map_load/map/test.png'))
     a = node([5,5,PI/2],1)
     a.Set_cost(0,0)
     b = node([8,5,PI/2],1)
@@ -139,4 +142,4 @@ if __name__ == '__main__':
     Scl = {}
     Sop, Scl, i = hybrid_A_star_process(a,b,Sop,Scl)
     Path = Show_path(Scl,a,b)
-    print(Path,i)
+    print('Finsh',i)
