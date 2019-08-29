@@ -129,6 +129,7 @@ def Show_path(S, Ns, Ng):
         Nn = S[S[Nn.Id].P]
         plt.plot(Path[-1][0]/resX,Path[-1][1]/resY,'ro')
         plt.arrow(Path[-1][0]/resX,Path[-1][1]/resY,1*m.cos(Path[-1][2]),1*m.sin(Path[-1][2]))
+        plt.pause(0.05)
     Path.append(Nn.C)
     plt.plot(Path[-1][0]/resX,Path[-1][1]/resY,'bo')
     plt.arrow(Path[-1][0]/resX,Path[-1][1]/resY,1*m.cos(Path[-1][2]),1*m.sin(Path[-1][2]))
