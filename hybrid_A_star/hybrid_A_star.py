@@ -36,6 +36,13 @@ class node():
         self.H = H
         self.COST = self.G + self.H
 
+def angle_correct(angle):
+    angle = m.fmod(angle, 2*PI)
+    if angle < 0:
+        angle = angle + 2*PI
+    return angle
+
+
 '''
 motionMode is used to  help agent to predict the configuration after choose some action.
 '''
@@ -46,7 +53,8 @@ def motionMode(C, V, W):
     X = Xp + V * deltaT * m.cos(THp)
     Y = Yp + V * deltaT * m.sin(THp)
     TH = THp + W * deltaT
-
+    TH = angle_correct(TH)
+    
     return [X,Y,TH]
 
 
@@ -55,7 +63,7 @@ calculate COST
 '''
 def Cost_cal(Nn, Ng, Vn, Wn, V, W):
     G = abs(V) + abs(W)
-    H = abs(Nn.C[0] - Ng.C[0]) + abs(Nn.C[1] - Ng.C[1]) + abs(Nn.C[2] - Ng.C[2])
+    H = m.sqrt(abs(Nn.C[0] - Ng.C[0])**2 + abs(Nn.C[1] - Ng.C[1])**2) + abs(Nn.C[2] - Ng.C[2])
 
     return G, H
 
@@ -72,7 +80,7 @@ def ExpandNode(N, Ng, So, Sc):
             C_temp = motionMode(N.C, V, W)
             temp = node(C_temp, N.Id)
             G, H = Cost_cal(temp, Ng, 0, 0, V, W)
-            temp.Set_cost(G + N.G,20*H)
+            temp.Set_cost(G + N.G,30*H)
             if temp.Id in Sc:
                 a = 1
             elif temp.Id in So:
@@ -121,19 +129,15 @@ def hybrid_A_star_process(Ns, Ng, So, Sc):
     return So, Sc, i
 
 
-def Show_path(S, Ns, Ng):
+def Get_path(S, Ns, Ng):
     Path = []
     Nn = Ng
     while Nn.Id != Ns.Id:
+        print(Nn.Id)
         Path.append(Nn.C)
         Nn = S[S[Nn.Id].P]
-        plt.plot(Path[-1][0]/resX,Path[-1][1]/resY,'ro')
-        plt.arrow(Path[-1][0]/resX,Path[-1][1]/resY,1*m.cos(Path[-1][2]),1*m.sin(Path[-1][2]))
-        plt.pause(0.05)
     Path.append(Nn.C)
-    plt.plot(Path[-1][0]/resX,Path[-1][1]/resY,'bo')
-    plt.arrow(Path[-1][0]/resX,Path[-1][1]/resY,1*m.cos(Path[-1][2]),1*m.sin(Path[-1][2]))
-    plt.show()
+    Path.reverse()
     return Path
 
 
@@ -151,18 +155,33 @@ def set_obs(Sc, im):
     return Sc, im_c
                     
                     
-    
+def Show_path(Path):
+    for i in range(len(Path)):
+        if i == 0:
+            plt.plot(Path[i][0]/resX,Path[i][1]/resY,'bo')
+            plt.arrow(Path[i][0]/resX,Path[i][1]/resY,1*m.cos(Path[i][2]),1*m.sin(Path[i][2]))
+            plt.pause(0.05)
+        elif i == len(Path) - 1:
+            plt.plot(Path[i][0]/resX,Path[i][1]/resY,'go')
+            plt.arrow(Path[i][0]/resX,Path[i][1]/resY,1*m.cos(Path[i][2]),1*m.sin(Path[i][2]))
+            plt.pause(0.05)
+        else:
+            plt.plot(Path[i][0]/resX,Path[i][1]/resY,'ro')
+            plt.arrow(Path[i][0]/resX,Path[i][1]/resY,1*m.cos(Path[i][2]),1*m.sin(Path[i][2]))
+            plt.pause(0.05)
 
+            
 
 if __name__ == '__main__':
-    image = rgb2gray(load_img('map_load/map/test3.png'))
-    a = node([5,5,PI/2],1)
+    image = rgb2gray(load_img('map_load/map/test6.png'))
+    a = node([7.1,4.7,PI/2],1)
     a.Set_cost(0,0)
-    b = node([8,5,PI],1)
+    b = node([5.7,9,3*PI/2],1)
     Sop = {}
     Scl = {}
     Scl, im_c = set_obs(Scl, image)
     plt.imshow(im_c, cmap='Greys_r', origin='lower')
     Sop, Scl, i = hybrid_A_star_process(a,b,Sop,Scl)
-    Path = Show_path(Scl,a,b)
+    Path = Get_path(Scl,a,b)
     print('Finsh',i)
+    Show_path(Path)
