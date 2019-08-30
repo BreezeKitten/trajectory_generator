@@ -158,17 +158,18 @@ def set_obs(Sc, im):
 def Show_path(Path):
     for i in range(len(Path)):
         if i == 0:
-            plt.plot(Path[i][0]/resX,Path[i][1]/resY,'bo')
+            plt.plot(Path[i][0]/resX,Path[i][1]/resY,'b.')
             plt.arrow(Path[i][0]/resX,Path[i][1]/resY,1*m.cos(Path[i][2]),1*m.sin(Path[i][2]))
             plt.pause(0.05)
         elif i == len(Path) - 1:
-            plt.plot(Path[i][0]/resX,Path[i][1]/resY,'go')
+            plt.plot(Path[i][0]/resX,Path[i][1]/resY,'g.')
             plt.arrow(Path[i][0]/resX,Path[i][1]/resY,1*m.cos(Path[i][2]),1*m.sin(Path[i][2]))
             plt.pause(0.05)
         else:
-            plt.plot(Path[i][0]/resX,Path[i][1]/resY,'ro')
+            plt.plot(Path[i][0]/resX,Path[i][1]/resY,'r.')
             plt.arrow(Path[i][0]/resX,Path[i][1]/resY,1*m.cos(Path[i][2]),1*m.sin(Path[i][2]))
             plt.pause(0.05)
+        plt.savefig('image/temp/'+str(i)+'.png')
 
             
 
@@ -176,11 +177,12 @@ if __name__ == '__main__':
     image = rgb2gray(load_img('map_load/map/test6.png'))
     a = node([7.1,4.7,PI/2],1)
     a.Set_cost(0,0)
-    b = node([5.7,9,3*PI/2],1)
+    b = node([5.7,8,3*PI/2],1)
     Sop = {}
     Scl = {}
     Scl, im_c = set_obs(Scl, image)
     plt.imshow(im_c, cmap='Greys_r', origin='lower')
+    plt.axis([55,80,40,90])
     Sop, Scl, i = hybrid_A_star_process(a,b,Sop,Scl)
     Path = Get_path(Scl,a,b)
     print('Finsh',i)
