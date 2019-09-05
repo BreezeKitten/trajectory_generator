@@ -63,7 +63,7 @@ calculate COST
 '''
 def Cost_cal(Nn, Ng, Vn, Wn, V, W):
     G = abs(V) + abs(W)
-    H = m.sqrt(abs(Nn.C[0] - Ng.C[0])**2 + abs(Nn.C[1] - Ng.C[1])**2) + abs(Nn.C[2] - Ng.C[2])
+    H = m.sqrt(abs(Nn.C[0] - Ng.C[0])**2 + abs(Nn.C[1] - Ng.C[1])**2) #+ abs(Nn.C[2] - Ng.C[2])
 
     return G, H
 
@@ -169,20 +169,20 @@ def Show_path(Path):
             plt.plot(Path[i][0]/resX,Path[i][1]/resY,'r.')
             plt.arrow(Path[i][0]/resX,Path[i][1]/resY,1*m.cos(Path[i][2]),1*m.sin(Path[i][2]))
             plt.pause(0.05)
-        plt.savefig('image/temp/'+str(i)+'.png')
+        #plt.savefig('image/temp/'+str(i)+'.png')
 
             
 
 if __name__ == '__main__':
     image = rgb2gray(load_img('map_load/map/test6.png'))
-    a = node([7.1,4.7,PI/2],1)
+    a = node([7.3,4.8,PI/2],1)
     a.Set_cost(0,0)
-    b = node([5.7,8,3*PI/2],1)
+    b = node([7,4.8,PI/2],1)
     Sop = {}
     Scl = {}
     Scl, im_c = set_obs(Scl, image)
     plt.imshow(im_c, cmap='Greys_r', origin='lower')
-    plt.axis([55,80,40,90])
+    plt.axis([60,80,40,60])
     Sop, Scl, i = hybrid_A_star_process(a,b,Sop,Scl)
     Path = Get_path(Scl,a,b)
     print('Finsh',i)
