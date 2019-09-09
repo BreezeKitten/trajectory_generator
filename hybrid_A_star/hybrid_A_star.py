@@ -8,8 +8,8 @@ from map_load.map_load import load_img, rgb2gray
 # Parameter
 PI = m.pi
 deltaT = 0.1 #time step
-V_set = [-1.5,-1,-0.5,0.5,1,1.5] # velocity sample set
-W_set = [0,PI/2,-PI/2,PI,-PI,PI/3,-PI/3] # angular velocity sample set
+#V_set = [-1.5,-1,-0.5,0.5,1,1.5] # velocity sample set
+#W_set = [0,PI/2,-PI/2,PI,-PI,PI/3,-PI/3] # angular velocity sample set
 resX = 0.1 # resolution of X
 resY = 0.1 # resolution of Y
 resTH = PI/15 # resolution of theta
@@ -26,9 +26,11 @@ Class node contain
 '''
 
 class node():
-    def __init__(self, C, P):
+    def __init__(self, C, P, V, W):
         self.C = C
         self.P = P
+        self.V = V
+        self.W = W
         self.Id = '[' + str(int(np.round(self.C[0]/resX))) + ',' +  str(int(np.round(self.C[1]/resY))) + ',' + str(int(np.round(self.C[2]/resTH))) + ']'
         
     def Set_cost(self, G, H):
@@ -58,6 +60,10 @@ def motionMode(C, V, W):
     return [X,Y,TH]
 
 
+def Get_Vel_range(Vnow, acc_lim, res):
+    Vel_Range = np.arange(Vnow - acc_lim * deltaT, Vnow + acc_lim * deltaT, res)
+    return Vel_Range
+
 '''
 calculate COST
 '''
@@ -75,20 +81,24 @@ in close set 'Sc', the G cost is less than a older one
 
     
 def ExpandNode(N, Ng, So, Sc):
+    V_set = Get_Vel_range(N.V, 20, 0.1)
+    W_set = Get_Vel_range(N.W, 20, 0.1)
     for V in V_set:
         for W in W_set:
             C_temp = motionMode(N.C, V, W)
-            temp = node(C_temp, N.Id)
+            temp = node(C_temp, N.Id, V, W)
             G, H = Cost_cal(temp, Ng, 0, 0, V, W)
             temp.Set_cost(G + N.G,30*H)
             if temp.Id in Sc:
-                a = 1
+                pass
             elif temp.Id in So:
                 if temp.G <= So[temp.Id].G:
                     So[temp.Id] = temp
             else:
                 So[temp.Id] = temp
-                
+    #print('---')
+    #for j in So:
+     #   print(j, So[j].V)            
     return So
 
 
@@ -97,17 +107,16 @@ Function find_min_cost will return the minimum cost node from the input set
 '''
 
 def find_min_cost(S):
-    min_node = node([999,999,999],0)
-    min_node.Set_cost(9999999,99999999999)
+    min_node = node([999,999,999],0,0,0)
+    min_node.Set_cost(999999999999999999999999999999,9999999999999999999999999999)
     for i in S:
         if S[i].COST < min_node.COST:
             min_node = S[i]
-
     return min_node
 
 
 '''
-A* process:
+hybrid A* process:
     Start by adding the start node into open set, then repeat:
     
     find the minimum cost node in open set
@@ -155,8 +164,10 @@ def set_obs(Sc, im):
     return Sc, im_c
                     
                     
-def Show_path(Path):
+def Show_path(Path,im,fig_range):
     for i in range(len(Path)):
+        plt.imshow(im_c, cmap='Greys_r', origin='lower')
+        plt.axis(fig_range)
         if i == 0:
             plt.plot(Path[i][0]/resX,Path[i][1]/resY,'b.')
             plt.arrow(Path[i][0]/resX,Path[i][1]/resY,1*m.cos(Path[i][2]),1*m.sin(Path[i][2]))
@@ -175,15 +186,15 @@ def Show_path(Path):
 
 if __name__ == '__main__':
     image = rgb2gray(load_img('map_load/map/test6.png'))
-    a = node([7.3,4.8,PI/2],1)
+    a = node([7.3,4.8,PI/2],1,0,0)
     a.Set_cost(0,0)
-    b = node([7,4.8,PI/2],1)
+    b = node([7,4.8,PI/2],1,0,0)
+    print(b.Id)
     Sop = {}
     Scl = {}
     Scl, im_c = set_obs(Scl, image)
-    plt.imshow(im_c, cmap='Greys_r', origin='lower')
-    plt.axis([60,80,40,60])
     Sop, Scl, i = hybrid_A_star_process(a,b,Sop,Scl)
     Path = Get_path(Scl,a,b)
     print('Finsh',i)
-    Show_path(Path)
+    fig_range = [60,80,40,60]
+    Show_path(Path,im_c,fig_range)
