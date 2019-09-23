@@ -1,8 +1,10 @@
+# %load hybrid_A_star.py
 # hybrid A* 
 
 import numpy as np
 import matplotlib.pyplot as plt
 import math as m
+import random
 from map_load.map_load import load_img, rgb2gray
 
 # Parameter
@@ -26,11 +28,12 @@ Class node contain
 '''
 
 class node():
-    def __init__(self, C, P, V, W):
+    def __init__(self, C, P, V, W, Time_tag):
         self.C = C
         self.P = P
         self.V = V
         self.W = W
+        self.Time_tag = Time_tag
         self.Id = '[' + str(int(np.round(self.C[0]/resX))) + ',' +  str(int(np.round(self.C[1]/resY))) + ',' + str(int(np.round(self.C[2]/resTH))) + ']'
         
     def Set_cost(self, G, H):
@@ -68,8 +71,8 @@ def Get_Vel_range(Vnow, acc_lim, res):
 calculate COST
 '''
 def Cost_cal(Nn, Ng, Vn, Wn, V, W):
-    G = abs(V) + abs(W)
-    H = m.sqrt(abs(Nn.C[0] - Ng.C[0])**2 + abs(Nn.C[1] - Ng.C[1])**2) #+ abs(Nn.C[2] - Ng.C[2])
+    G = abs(Vn - V) + abs(Wn - W) + 10
+    H = m.sqrt(abs(Nn.C[0] - Ng.C[0])**2 + abs(Nn.C[1] - Ng.C[1])**2) + abs(Nn.C[2] - Ng.C[2])
 
     return G, H
 
@@ -86,8 +89,8 @@ def ExpandNode(N, Ng, So, Sc):
     for V in V_set:
         for W in W_set:
             C_temp = motionMode(N.C, V, W)
-            temp = node(C_temp, N.Id, V, W)
-            G, H = Cost_cal(temp, Ng, 0, 0, V, W)
+            temp = node(C_temp, N.Id, V, W, N.Time_tag + 1)
+            G, H = Cost_cal(temp, Ng, N.V, N.W, V, W)
             temp.Set_cost(G + N.G,30*H)
             if temp.Id in Sc:
                 pass
@@ -107,7 +110,7 @@ Function find_min_cost will return the minimum cost node from the input set
 '''
 
 def find_min_cost(S):
-    min_node = node([999,999,999],0,0,0)
+    min_node = node([999,999,999],0,0,0,0)
     min_node.Set_cost(999999999999999999999999999999,9999999999999999999999999999)
     for i in S:
         if S[i].COST < min_node.COST:
@@ -142,7 +145,7 @@ def Get_path(S, Ns, Ng):
     Path = []
     Nn = Ng
     while Nn.Id != Ns.Id:
-        print(Nn.Id)
+        #print(Nn.Id)
         Path.append(Nn.C)
         Nn = S[S[Nn.Id].P]
     Path.append(Nn.C)
@@ -164,37 +167,43 @@ def set_obs(Sc, im):
     return Sc, im_c
                     
                     
-def Show_path(Path,im,fig_range):
+def Show_path(Path,im,fig_range,loop):
     for i in range(len(Path)):
         plt.imshow(im_c, cmap='Greys_r', origin='lower')
         plt.axis(fig_range)
         if i == 0:
             plt.plot(Path[i][0]/resX,Path[i][1]/resY,'b.')
-            plt.arrow(Path[i][0]/resX,Path[i][1]/resY,1*m.cos(Path[i][2]),1*m.sin(Path[i][2]))
-            plt.pause(0.05)
+            plt.arrow(Path[i][0]/resX,Path[i][1]/resY,5*m.cos(Path[i][2]),5*m.sin(Path[i][2]))
+            #plt.pause(0.05)
         elif i == len(Path) - 1:
             plt.plot(Path[i][0]/resX,Path[i][1]/resY,'g.')
-            plt.arrow(Path[i][0]/resX,Path[i][1]/resY,1*m.cos(Path[i][2]),1*m.sin(Path[i][2]))
-            plt.pause(0.05)
+            plt.arrow(Path[i][0]/resX,Path[i][1]/resY,5*m.cos(Path[i][2]),5*m.sin(Path[i][2]))
+            #plt.pause(0.05)
         else:
             plt.plot(Path[i][0]/resX,Path[i][1]/resY,'r.')
-            plt.arrow(Path[i][0]/resX,Path[i][1]/resY,1*m.cos(Path[i][2]),1*m.sin(Path[i][2]))
-            plt.pause(0.05)
+            plt.arrow(Path[i][0]/resX,Path[i][1]/resY,5*m.cos(Path[i][2]),5*m.sin(Path[i][2]))
+            #plt.pause(0.05)
         #plt.savefig('image/temp/'+str(i)+'.png')
+    #plt.savefig('image/'+str(loop)+'.png')
+    plt.show()
 
-            
+
+def State_Random():
+    State = [10*random.random(),10*random.random(),2*PI*random.random()]
+    return State     
 
 if __name__ == '__main__':
-    image = rgb2gray(load_img('map_load/map/test6.png'))
-    a = node([7.3,4.8,PI/2],1,0,0)
-    a.Set_cost(0,0)
-    b = node([7,4.8,PI/2],1,0,0)
-    print(b.Id)
-    Sop = {}
-    Scl = {}
-    Scl, im_c = set_obs(Scl, image)
-    Sop, Scl, i = hybrid_A_star_process(a,b,Sop,Scl)
-    Path = Get_path(Scl,a,b)
-    print('Finsh',i)
-    fig_range = [60,80,40,60]
-    Show_path(Path,im_c,fig_range)
+    image = rgb2gray(load_img('map_load/map/empty.png'))
+    for loop in range(0,1000):
+        Start_node = node(State_Random(),1,0,0,0)
+        Start_node.Set_cost(0,0)
+        Goal_node = node(State_Random(),1,0,0,0)
+        print('from',Start_node.Id,'to',Goal_node.Id)
+        Sop = {}
+        Scl = {}
+        Scl, im_c = set_obs(Scl, image)
+        Sop, Scl, i = hybrid_A_star_process(Start_node,Goal_node,Sop,Scl)
+        Path = Get_path(Scl,Start_node,Goal_node)
+        print('Finsh',i)
+        fig_range = [-20,120,-20,120]
+        Show_path(Path,im_c,fig_range,loop)
