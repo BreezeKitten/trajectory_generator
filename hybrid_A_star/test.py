@@ -1,6 +1,9 @@
 # %load hybrid_A_star.py
 # hybrid A* 
 
+# %load hybrid_A_star.py
+# hybrid A* 
+
 import numpy as np
 import matplotlib.pyplot as plt
 import math as m
@@ -68,6 +71,7 @@ def motionMode(C, V, W):
 def Get_Vel_range(Vnow, acc_lim, Vmax, res):
     Vel_Range = np.arange(max(-Vmax,Vnow - acc_lim * deltaT), min(V_max,Vnow + acc_lim * deltaT), res)
     return Vel_Range
+
 '''
 calculate COST
 '''
@@ -85,8 +89,8 @@ in close set 'Sc', the G cost is less than a older one
 
     
 def ExpandNode(N, Ng, So, Sc):
-    V_set = Get_Vel_range(N.V, 20, V_max, 0.1)
-    W_set = Get_Vel_range(N.W, 20, W_max, 0.1)
+    V_set = Get_Vel_range(N.V, 20, V_max,0.1)
+    W_set = Get_Vel_range(N.W, 20, W_max,0.1)
     for V in V_set:
         for W in W_set:
             C_temp = motionMode(N.C, V, W)
@@ -131,39 +135,27 @@ hybrid A* process:
 '''
 
 def hybrid_A_star_process(Ns, Ng, So, Sc):
+    So[Ns.Id] = Ns
     i = 0
-    if (Ns.Id in Sc) or (Ng.Id in Sc):
-        result = 'Start or Goal in Obs, Fail'
-        return So, Sc, i, result
-    else:
-        So[Ns.Id] = Ns
-        while Ng.Id not in Sc:
-            Nn = find_min_cost(So)
-            So = ExpandNode(Nn, Ng, So, Sc)
-            Sc[Nn.Id] = Nn
-            del So[Nn.Id]
-            i = i + 1
-            if i > 40000:
-                result = 'Time out'
-                return So, Sc, i, result
-        result = 'Susscess'
-        return So, Sc, i, result
+    while Ng.Id not in Sc:
+        Nn = find_min_cost(So)
+        So = ExpandNode(Nn, Ng, So, Sc)
+        Sc[Nn.Id] = Nn
+        del So[Nn.Id]
+        i = i + 1
+    return So, Sc, i
 
 
 def Get_path(S, Ns, Ng):
     Path = []
-    Path_node = []
     Nn = Ng
     while Nn.Id != Ns.Id:
         #print(Nn.Id)
         Path.append(Nn.C)
-        Path_node.append(Nn)
         Nn = S[S[Nn.Id].P]
     Path.append(Nn.C)
     Path.reverse()
-    Path_node.append(Nn)
-    Path_node.reverse()    
-    return Path, Path_node
+    return Path
 
 
 def set_obs_old(Sc, im):
@@ -191,18 +183,13 @@ def image_transform(im):
 
 
 def place_obs(im, obs,r):
-    [x_size, y_size] = np.shape(im)
     ID = [int(np.round(obs[0]/resX)),int(np.round(obs[1]/resY))]
     for i in range(r):
         for j in range(r-i):
-            if (not ID[0]-i < 0) and (not ID[1]-j < 0):                
-                im[ID[0]-i][ID[1]-j] = 0
-            if (not ID[0]+i >= x_size) and (not ID[1]-j < 0):     
-                im[ID[0]+i][ID[1]-j] = 0
-            if (not ID[0]-i < 0) and (not ID[1]+j >= y_size):    
-                im[ID[0]-i][ID[1]+j] = 0
-            if (not ID[0]+i >= x_size) and (not ID[1]+j >= y_size):
-                im[ID[0]+i][ID[1]+j] = 0   
+            im[ID[0]-i][ID[1]-j] = 0
+            im[ID[0]+i][ID[1]-j] = 0
+            im[ID[0]-i][ID[1]+j] = 0
+            im[ID[0]+i][ID[1]+j] = 0    
     return im
 
 
@@ -236,44 +223,30 @@ def Show_path(Path,im,fig_range,loop):
             plt.arrow(Path[i][0]/resX,Path[i][1]/resY,5*m.cos(Path[i][2]),5*m.sin(Path[i][2]))
             #plt.pause(0.05)
         #plt.savefig('image/temp/'+str(i)+'.png')
-    #plt.savefig('image/'+str(loop)+'.png')
+    plt.savefig('image/0925/'+str(loop)+'.png')
     plt.show()
 
 
 def State_Random():
     State = [10*random.random(),10*random.random(),2*PI*random.random()]
-    return State
-
-def Record_Path(loop,i,Path_node,Obs,r):
-    record = open('record.txt','a+')
-    lines = ['[',str(loop),',',str(i),',',str(0.99*Obs[0]),',',str(0.99*Obs[1]),',',str(r),'----]','\n']
-    record.writelines(lines)
-    for i in range(len(Path_node)):
-        lines = ['[',str(Path_node[i].C[0]),',',str(Path_node[i].C[1]),',',str(Path_node[i].C[2]),',',str(Path_node[i].V),',',str(Path_node[i].W),',',str(Path_node[i].Time_tag),']','\n']
-        record.writelines(lines)
-    record.close()
-     
+    return State     
 
 if __name__ == '__main__':
     image = rgb2gray(load_img('map_load/map/empty.png'))
-    for loop in range(0,1):
+    for loop in range(0,1000):
         im_c = image_transform(image)
         Start_node = node(State_Random(),1,0,0,0)
         Start_node.Set_cost(0,0)
         Goal_node = node(State_Random(),1,0,0,0)
         Obs = State_Random()
-        r = round(30*random.random())
-        print('from',Start_node.Id,'to',Goal_node.Id,',Obs at [',0.99*Obs[0],',',0.99*Obs[1],'], r =',r)
-        im_c = place_obs(im_c, [0.99*Obs[0],0.99*Obs[1]],r)
+        r = 1
+        print('from',Start_node.Id,'to',Goal_node.Id,'Obs at [',Obs[0],Obs[1],'], r =',r)
+        im_c = place_obs(im_c, [Obs[0],Obs[1]],r)
         Sop = {}
         Scl = {}
         Scl, im_show = set_obs(Scl, im_c)
-        Sop, Scl, i, result = hybrid_A_star_process(Start_node,Goal_node,Sop,Scl)
-        if result == 'Susscess':
-            Path, Path_node = Get_path(Scl,Start_node,Goal_node)
-            print('Finsh',i)
-            fig_range = [-20,120,-20,120]
-            Show_path(Path,im_show,fig_range,loop)
-            Record_Path(loop,i,Path_node,Obs,r)
-        else:
-            print(result)
+        Sop, Scl, i = hybrid_A_star_process(Start_node,Goal_node,Sop,Scl)
+        Path = Get_path(Scl,Start_node,Goal_node)
+        print('Finsh',i)
+        fig_range = [-20,120,-20,120]
+        Show_path(Path,im_show,fig_range,loop)
